@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LogView</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+
+    <style>
+        body {
+            background-color: black;
+            color: white
+        }
+
+        #sidebar {
+            background-color: black;
+            overflow-y: auto;
+            height: 100vh;
+        }
+
+        .nav-link {
+            color: white;
+            text-decoration: none;
+        }
+
+        .nav-item-group-title {
+            cursor: default;
+            color: gray
+        }
+
+        .nav-item-group-title:hover {
+            cursor: default;
+        }
+
+        .nav-link:hover {
+            color: black;
+            background-color: rgb(101, 97, 101);
+        }
+
+        .nav-item:hover {
+            text-decoration: bold;
+        }
+
+        #logEntries {
+            max-height: 75vh; /* Set a maximum height for the div */
+            overflow-y: auto; /* Enable vertical scrolling */
+            border: 1px solid #ddd; /* Optional: Add a border for better visibility */
+            padding: 10px; /* Optional: Add padding to the div */
+        }
+
+
+        /* Style the scrollbar for WebKit browsers */
+        #sidebar::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        #sidebar::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0);
+        }
+
+        #sidebar::-webkit-scrollbar-track {
+            background-color: rgba(0, 0, 0, 0);
+        }
+
+        #logEntries::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        #logEntries::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0);
+        }
+
+        #logEntries::-webkit-scrollbar-track {
+            background-color: rgba(0, 0, 0, 0);
+        }
+
+        .active {
+            background-color: yellow;
+            color: black;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container-fluid">
+        <div class="row vh-100">
+
+            <!-- Sidebar -->
+            <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block sidebar">
+                <div class="position-sticky" style="max-height: 100vh;">
+
+                    {% for dd in date_dirs %}
+                    <ul class="nav flex-column my-1">
+                        <li class="nav-item-group-title m-0 p-1 {% if dd.date == log_date %} active {% endif %}">
+                            <b>{{ dd.dirname }}</b>
+                        </li>
+                        <li class="nav-item mx-4">
+                            <a class="nav-link p-0 {% if dd.date == log_date and log_type == 'Error' %} active {% endif %}" href="/logs/{{ dd.date }}/error">
+                                Errors
+                            </a>
+                        </li>
+                        <li class="nav-item mx-4">
+                            <a class="nav-link p-0 {% if dd.date == log_date and log_type == 'Warning' %} active {% endif %}" href="/logs/{{ dd.date }}/warning">
+                                Warnings
+                            </a>
+                        </li>
+                        <li class="nav-item mx-4">
+                            <a class="nav-link p-0 {% if dd.date == log_date and log_type == 'SOS' %} active {% endif %}" href="/logs/{{ dd.date }}/sos">
+                                SOS/Emergency
+                            </a>
+                        </li>
+                        <li class="nav-item mx-4">
+                            <a class="nav-link p-0 {% if dd.date == log_date and log_type == 'Debug' %} active {% endif %}" href="/logs/{{ dd.date }}/debug">
+                                Debug
+                            </a>
+                        </li>
+                        <li class="nav-item mx-4">
+                            <a class="nav-link p-0 {% if dd.date == log_date and log_type == 'Acitivity' %} active {% endif %}" href="/logs/{{ dd.date }}/activity">
+                                Users Activities
+                            </a>
+                        </li>
+                        <li class="nav-item mx-4">
+                            <a class="nav-link p-0 {% if dd.date == log_date and log_type == 'Info' %} active {% endif %}" href="/logs/{{ dd.date }}/info">
+                                Info
+                            </a>
+                        </li>
+                    </ul>
+                    {% endfor %}
+                </div>
+            </nav>
+
+            <!-- Page Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 mt-3">
+                <div>
+                    <h2>{{ log_type }} Logs</h2>
+                    <p>{{ log_date }}</p>
+                </div>
+
+                <div class="row">
+                    <div class="col-6">
+                        <label for="searchInput" class="mb-1">Search</label>
+                        <input id="searchInput" class="form-control bg-dark" type="text" oninput="filterLogs()"
+                            style="color: white">
+                    </div>
+
+                    <div class="col-6">
+                        <label for="serverSearchInput" class="mb-1">File's too long? Perform a server search</label>
+                        <div class="input-group">
+                            <input id="serverSearchInput" class="form-control bg-dark" type="text" style="color: white">
+                            <button class="btn btn-outline-secondary" type="button"
+                                id="serverSearchInputBtn">Search</button>
+                        </div>
+                    </div>
+
+
+                    <div id="logEntries" class="mt-4" mx-2>
+                        <!-- <div class="log-entry">
+                            <span class="log-time">08/02/2023 12:34 PM</span>
+                            <p>Error: Something went wrong</p>
+                        </div> -->
+                        {% for timestamp, log_entry in log_entries.items() %}
+                        <div class="log-entry">
+                            <span class="log-time">{{ timestamp }}</span>
+                            <p>{{ log_entry }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+        crossorigin="anonymous"></script>
+
+    <script>
+        function filterLogs() {
+            var searchInput = document.getElementById('searchInput').value.toLowerCase();
+            var logEntries = document.getElementById('logEntries').getElementsByClassName('log-entry');
+
+            for (var i = 0; i < logEntries.length; i++) {
+                var logText = logEntries[i].textContent.toLowerCase();
+                if (logText.includes(searchInput)) {
+                    logEntries[i].style.display = 'block';
+                } else {
+                    logEntries[i].style.display = 'none';
+                }
+            }
+        }
+
+        const date = '20230201';  // Replace with the desired date
+        const apiUrl = `/logs/${date}/error`;
+
+        fetch(apiUrl)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const logEntriesContainer = document.getElementById('logEntries');
+                    // logEntriesContainer.innerText = data.content;
+                    
+                    data.content.split('\n').forEach(logEntry => {
+                        console.log(logEntry);
+                        console.log(logEntry.split(':'));
+                        const [logTime, logMessage] = logEntry.split(':');
+                        const logEntryDiv = document.createElement('div');
+                        logEntryDiv.classList.add('log-entry');
+
+                        const logTimeSpan = document.createElement('span');
+                        logTimeSpan.classList.add('log-time');
+                        logTimeSpan.textContent = logTime.trim();
+
+                        const logMessageP = document.createElement('p');
+                        logMessageP.textContent = logMessage.trim();
+
+                        logEntryDiv.appendChild(logTimeSpan);
+                        logEntryDiv.appendChild(logMessageP);
+                        logEntriesContainer.appendChild(logEntryDiv);
+                    });
+                } else {
+                    console.error('Error fetching logs:', data.message);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+
+    </script>
+
+</body>
+
+</html>
